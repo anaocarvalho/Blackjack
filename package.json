@@ -1,0 +1,11 @@
+{
+  "name": "blackjack",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Browser Blackjack dealt from the Deck of Cards API",
+  "type": "module",
+  "scripts": {
+    "start": "npx --yes serve public -l 8080",
+    "test": "node --test"
+  }
+}
