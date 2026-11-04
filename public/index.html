@@ -44,6 +44,14 @@
       </dl>
     </header>
 
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button id="tab-table" class="tab" role="tab" aria-controls="panel-table" aria-selected="true" type="button">Table</button>
+      <button id="tab-profile" class="tab" role="tab" aria-controls="panel-profile" aria-selected="false" type="button" tabindex="-1">
+        Profile <span id="profile-badge" class="badge" hidden>New</span>
+      </button>
+    </nav>
+
+    <div id="panel-table" class="panel game" role="tabpanel" aria-labelledby="tab-table">
     <section class="hand dealer" aria-labelledby="dealer-label">
       <h2 id="dealer-label">Dealer <span class="total" id="dealer-total"></span></h2>
       <div class="cards" id="dealer-cards"></div>
@@ -81,6 +89,52 @@
       </div>
 
       <button id="btn-retry" class="btn primary retry" hidden>Retry</button>
+    </section>
+    </div>
+
+    <section id="panel-profile" class="panel profile" role="tabpanel" aria-labelledby="tab-profile" hidden>
+      <form id="profile-form" class="profile-card" novalidate>
+        <div class="profile-head">
+          <img id="profile-avatar" class="avatar large" width="72" height="72" alt="" referrerpolicy="no-referrer" hidden>
+          <div>
+            <h2 id="profile-heading">Your profile</h2>
+            <p id="profile-intro" class="muted"></p>
+            <p id="profile-since" class="muted small"></p>
+          </div>
+        </div>
+
+        <p id="profile-loading" class="muted">Loading your profile…</p>
+
+        <div id="profile-fields" hidden>
+          <label class="field">
+            <span>Display name</span>
+            <input id="pf-display-name" name="display_name" autocomplete="name" required aria-describedby="pf-display-name-error">
+            <small id="pf-display-name-error" class="field-error" hidden></small>
+          </label>
+
+          <label class="field">
+            <span>Username</span>
+            <div class="input-prefix"><span aria-hidden="true">@</span>
+              <input id="pf-username" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required
+                     pattern="[a-z0-9_]{3,20}" aria-describedby="pf-username-hint pf-username-error">
+            </div>
+            <small id="pf-username-hint" class="muted small">3–20 lowercase letters, numbers or underscores. Must be unique.</small>
+            <small id="pf-username-error" class="field-error" hidden></small>
+          </label>
+
+          <label class="field">
+            <span>Bio <em class="muted">(optional)</em></span>
+            <textarea id="pf-bio" name="bio" rows="3" placeholder="High roller, card counter, or just here for fun?" aria-describedby="pf-bio-count pf-bio-error"></textarea>
+            <small id="pf-bio-count" class="muted small counter"></small>
+            <small id="pf-bio-error" class="field-error" hidden></small>
+          </label>
+
+          <div class="profile-actions">
+            <button id="btn-profile-save" class="btn primary" type="submit">Save</button>
+            <p id="profile-status" class="profile-status" role="status" aria-live="polite"></p>
+          </div>
+        </div>
+      </form>
     </section>
 
     <footer class="footer">

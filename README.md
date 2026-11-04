@@ -21,6 +21,19 @@ The page opens on a sign-in screen. **Sign in with Google** sends the player to 
 
    If the page you sign in from isn't on this list, Supabase sends players to the Site URL instead.
 
+## Player profiles
+
+Once signed in, there are two tabs: **Table** and **Profile**. The first time someone signs in, the Profile tab opens with a **New** badge so they can create a profile:
+
+- **Display name** (required, up to 40 characters), prefilled from Google. Its first word is used in the greeting and on the player's hand.
+- **Username** (required, unique, 3–20 lowercase letters, numbers or underscores), suggested from the Google name.
+- **Bio** (optional, up to 160 characters).
+- The Google profile picture is saved with the profile.
+
+Players can skip it and play straight away, and edit their profile later from the same tab.
+
+Profiles live in the Supabase table `public.profiles` (see `supabase/migrations/`). Row-level security lets signed-in players read profiles but create, edit or delete only their own. Signed-out visitors can't read the table at all. The database enforces the same limits as the form.
+
 ## How to play
 
 - Click chips to place a bet (minimum $5), then **Deal**.
@@ -62,8 +75,11 @@ public/            ← what Netlify serves
   js/app.js        ← UI and game flow (loaded after sign-in)
   js/auth.js       ← Google sign-in, greeting, sign out (page entry point)
   js/config.js     ← Supabase URL + publishable key
+  js/profile.js    ← Profile tab (load / create / save)
+  js/profile-rules.js ← profile validation (matches the database constraints)
   vendor/          ← supabase-js bundle
-tests/             ← unit tests for the rules (node:test)
+supabase/migrations/ ← SQL for the profiles table (already applied to the project)
+tests/             ← unit tests for game and profile rules (node:test)
 netlify.toml       ← publish = "public", security headers (CSP allows Supabase + Google avatars)
 ```
 

@@ -123,6 +123,75 @@ h1 {
   cursor: pointer;
 }
 
+/* ---------- tabs ---------- */
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid rgba(232, 199, 102, 0.35); }
+.tab {
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -1px;
+  padding: 10px 16px;
+  color: var(--muted);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.tab:hover { color: var(--ink); }
+.tab[aria-selected="true"] { color: var(--gold); border-bottom-color: var(--gold); }
+.badge {
+  background: var(--gold);
+  color: #1d1a10;
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.panel.game { display: flex; flex-direction: column; gap: 12px; flex: 1; }
+
+/* ---------- profile ---------- */
+.profile-card {
+  width: min(100%, 560px);
+  margin: 8px auto 0;
+  padding: 24px;
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(232, 199, 102, 0.3);
+}
+.profile-head { display: flex; gap: 16px; align-items: center; margin-bottom: 20px; }
+.profile-head h2 { margin: 0 0 4px; font-family: Georgia, serif; color: var(--gold); font-size: 1.5rem; }
+.profile-head p { margin: 0; }
+.avatar.large { width: 72px; height: 72px; }
+.muted { color: var(--muted); }
+.small { font-size: 0.8rem; }
+.field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; }
+.field > span { font-weight: 600; }
+.field em { font-style: normal; font-weight: 400; }
+.field input, .field textarea {
+  width: 100%;
+  padding: 11px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--ink);
+  font: inherit;
+}
+.field textarea { resize: vertical; min-height: 80px; }
+.field input:focus, .field textarea:focus { outline: 2px solid var(--gold); outline-offset: 1px; border-color: transparent; }
+.field [aria-invalid="true"] { border-color: var(--lose); }
+.input-prefix { position: relative; }
+.input-prefix > span { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+.input-prefix input { padding-left: 28px; }
+.counter { align-self: flex-end; }
+.field-error { color: var(--lose); font-weight: 600; }
+.profile-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.profile-status { margin: 0; font-weight: 600; }
+.profile-status[data-tone="win"] { color: var(--win); }
+.profile-status[data-tone="error"] { color: var(--lose); }
+
 .hand h2 {
   margin: 0 0 8px;
   font-size: 1rem;

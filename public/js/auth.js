@@ -1,5 +1,6 @@
-// Entry point: Google sign-in through Supabase Auth, then the game loads.
+// Entry point: Google sign-in through Supabase Auth, then the game and profile load.
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.js';
+import { createProfileTab } from './profile.js';
 
 const $ = (sel) => document.querySelector(sel);
 const el = {
@@ -13,17 +14,22 @@ const el = {
   email: $('#user-email'),
   signOut: $('#btn-signout'),
   playerLabel: $('#player-name'),
+  tabs: [$('#tab-table'), $('#tab-profile')],
+  profileBadge: $('#profile-badge'),
+  profileLoading: $('#profile-loading'),
+  profileFields: $('#profile-fields'),
 };
 
 /** Name and photo from the Google profile Supabase stores in user_metadata. */
 export function profileFrom(user) {
   const meta = user?.user_metadata ?? {};
   const fullName = meta.full_name || meta.name || user?.email?.split('@')[0] || 'Player';
-  const firstName = fullName.trim().split(/\s+/)[0];
-  const initials = fullName.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? '').join('');
   const avatar = meta.avatar_url || meta.picture || '';
-  return { fullName, firstName, initials, avatar, email: user?.email ?? '' };
+  return { fullName, avatar, email: user?.email ?? '' };
 }
+
+const firstWord = (name) => name.trim().split(/\s+/)[0];
+const initialsOf = (name) => name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? '').join('');
 
 function showLoginError(message) {
   el.loginError.textContent = message;
@@ -37,30 +43,87 @@ function showLogin() {
   document.title = 'Sign in · Blackjack';
 }
 
-let gameLoaded = false;
-async function showTable(user) {
-  const p = profileFrom(user);
-  el.greeting.textContent = `Hi, ${p.firstName}!`;
-  el.email.textContent = p.email;
-  el.playerLabel.textContent = p.firstName;
-  el.initials.textContent = p.initials;
-  el.initials.hidden = Boolean(p.avatar);
-  el.avatar.hidden = !p.avatar;
-  if (p.avatar) {
-    el.avatar.src = p.avatar;
-    el.avatar.alt = `${p.fullName}'s profile picture`;
+// ---------- tabs ----------
+function selectTab(name, { focus = false } = {}) {
+  for (const tab of el.tabs) {
+    const selected = tab.id === `tab-${name}`;
+    tab.setAttribute('aria-selected', String(selected));
+    tab.tabIndex = selected ? 0 : -1;
+    document.getElementById(tab.getAttribute('aria-controls')).hidden = !selected;
+    if (selected && focus) tab.focus();
+  }
+  const hash = name === 'profile' ? '#profile' : '';
+  if (location.hash !== hash) history.replaceState(null, '', location.pathname + hash);
+}
+
+for (const tab of el.tabs) {
+  tab.addEventListener('click', () => selectTab(tab.id.replace('tab-', '')));
+  tab.addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    const i = el.tabs.indexOf(tab);
+    const next = el.tabs[(i + (e.key === 'ArrowRight' ? 1 : el.tabs.length - 1)) % el.tabs.length];
+    selectTab(next.id.replace('tab-', ''), { focus: true });
+  });
+}
+
+/** Show the player's name everywhere: their profile name if they have one, else Google's. */
+function applyName(displayName) {
+  el.greeting.textContent = `Hi, ${firstWord(displayName)}!`;
+  el.playerLabel.textContent = firstWord(displayName);
+  el.initials.textContent = initialsOf(displayName);
+  document.body.dataset.firstName = firstWord(displayName);
+}
+
+let started = false;
+async function showTable(supabase, user) {
+  if (started) return;
+  started = true;
+  const google = profileFrom(user);
+
+  applyName(google.fullName);
+  el.email.textContent = google.email;
+  el.initials.hidden = Boolean(google.avatar);
+  el.avatar.hidden = !google.avatar;
+  if (google.avatar) {
+    el.avatar.src = google.avatar;
+    el.avatar.alt = `${google.fullName}'s profile picture`;
     el.avatar.onerror = () => { el.avatar.hidden = true; el.initials.hidden = false; };
   }
   el.login.hidden = true;
   el.table.hidden = false;
   document.title = 'Blackjack';
+  selectTab(location.hash === '#profile' ? 'profile' : 'table');
 
-  if (!gameLoaded) {
-    gameLoaded = true;
-    document.body.dataset.userId = user.id; // bankroll is saved per player
-    document.body.dataset.firstName = p.firstName;
-    await import('./app.js');
+  const profileTab = createProfileTab({
+    supabase,
+    user,
+    google,
+    onSaved(profile, created) {
+      applyName(profile.display_name);
+      el.profileBadge.hidden = true;
+      if (created) setTimeout(() => selectTab('table'), 1200);
+    },
+  });
+
+  let profile = null;
+  try {
+    profile = await profileTab.load();
+    el.profileLoading.hidden = true;
+    el.profileFields.hidden = false;
+  } catch (err) {
+    console.error(err);
+    el.profileLoading.textContent = `Could not load your profile: ${err.message}. Refresh to try again.`;
   }
+  if (profile) {
+    applyName(profile.display_name);
+  } else if (!el.profileFields.hidden) {
+    // First visit: nudge them to create a profile before playing.
+    el.profileBadge.hidden = false;
+    selectTab('profile');
+  }
+
+  document.body.dataset.userId = user.id; // bankroll is saved per player
+  await import('./app.js');
 }
 
 async function main() {
@@ -103,7 +166,7 @@ async function main() {
   }
 
   if (data?.session) {
-    await showTable(data.session.user);
+    await showTable(supabase, data.session.user);
   } else {
     showLogin();
     if (urlError) showLoginError(`Sign-in was not completed: ${urlError}`);
@@ -112,9 +175,9 @@ async function main() {
 
   supabase.auth.onAuthStateChange((event, session) => {
     if (event === 'SIGNED_OUT') showLogin();
-    else if (session && (event === 'SIGNED_IN' || event === 'USER_UPDATED')) {
+    else if (session && event === 'SIGNED_IN') {
       // Defer: awaiting other Supabase calls inside this callback can deadlock.
-      setTimeout(() => showTable(session.user), 0);
+      setTimeout(() => showTable(supabase, session.user), 0);
     }
   });
 }

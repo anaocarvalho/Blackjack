@@ -341,6 +341,7 @@ el.retry.addEventListener('click', () => {
 
 document.addEventListener('keydown', (e) => {
   if (e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
+  if (e.target instanceof HTMLElement && e.target.closest('input, textarea, select, [contenteditable]')) return;
   const map = { h: el.hit, s: el.stand, d: el.double, enter: el.deal };
   const btn = map[e.key.toLowerCase()];
   if (!btn || btn.disabled || btn.closest('[hidden]')) return;
