@@ -1,7 +1,25 @@
 # Blackjack
 
 Browser Blackjack dealt from a real 6-deck shoe by the free [Deck of Cards API](https://deckofcardsapi.com/).
-Plain HTML, CSS and JavaScript — no framework, no build step, no API key.
+Plain HTML, CSS and JavaScript — no framework, no build step. Players sign in with Google (via Supabase Auth) before taking a seat.
+
+## Sign in with Google
+
+The page opens on a sign-in screen. **Sign in with Google** sends the player to Google through Supabase, and back to the table, which greets them by first name with their Google profile picture (initials if there is no photo). **Sign out** is in the top bar. Each player's bankroll is saved separately in their browser.
+
+- Supabase project: `https://dxdgffmczouqwjhwefkf.supabase.co`, set in `public/js/config.js`. That file holds the **publishable** key, which is designed to be public. Never put a `service_role`/secret key in it.
+- The Supabase client is vendored at `public/vendor/supabase-2.119.0.js` (supabase-js v2.119.0, UMD build), so the site still has no build step.
+- Sign-in uses the PKCE flow: Google → `https://dxdgffmczouqwjhwefkf.supabase.co/auth/v1/callback` → back to the page with `?code=`, which supabase-js exchanges for a session.
+
+### One-time setup (outside the code)
+
+1. **Google Cloud Console** → your OAuth client → *Authorized redirect URIs* must include `https://dxdgffmczouqwjhwefkf.supabase.co/auth/v1/callback`.
+2. **Supabase** → Authentication → Sign In / Providers → **Google** enabled with that client's ID and secret.
+3. **Supabase** → Authentication → URL Configuration:
+   - **Site URL**: your Netlify URL, e.g. `https://your-site.netlify.app`
+   - **Redirect URLs**: add `https://your-site.netlify.app/**` and, for local testing, `http://localhost:8080/**`
+
+   If the page you sign in from isn't on this list, Supabase sends players to the Site URL instead.
 
 ## How to play
 
@@ -41,17 +59,20 @@ public/            ← what Netlify serves
   css/styles.css
   js/blackjack.js  ← pure game rules (hand totals, dealer logic, payouts)
   js/api.js        ← Deck of Cards API wrapper (the shoe)
-  js/app.js        ← UI and game flow
+  js/app.js        ← UI and game flow (loaded after sign-in)
+  js/auth.js       ← Google sign-in, greeting, sign out (page entry point)
+  js/config.js     ← Supabase URL + publishable key
+  vendor/          ← supabase-js bundle
 tests/             ← unit tests for the rules (node:test)
-netlify.toml       ← publish = "public", security headers
+netlify.toml       ← publish = "public", security headers (CSP allows Supabase + Google avatars)
 ```
 
 ## Run locally
 
-ES modules don't load from `file://`, so serve the folder:
+ES modules don't load from `file://`, so serve the folder. Use port 8080 so it matches the local redirect URL above:
 
 ```bash
-npx serve public
+npx serve public -l 8080
 ```
 
 or
@@ -73,4 +94,4 @@ npm test
 - **From GitHub:** Netlify → Add new site → Import an existing project → pick this repo, branch `main`. Leave the build settings as `netlify.toml` provides them.
 - **Manual drag-and-drop:** Netlify → Sites → drag the `public` folder onto the deploy area.
 
-No environment variables are needed.
+No environment variables are needed. After the first deploy, add the Netlify URL to Supabase's URL Configuration (see *One-time setup*).

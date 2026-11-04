@@ -3,7 +3,8 @@ import {
 } from './blackjack.js';
 import { Shoe, CARD_BACK } from './api.js';
 
-const STORAGE_KEY = 'blackjack.bankroll';
+// Saved per signed-in player (auth.js puts the Supabase user id on <body>).
+const STORAGE_KEY = `blackjack.bankroll.${document.body.dataset.userId || 'guest'}`;
 const DEAL_DELAY = 180;
 const DEALER_DELAY = 600;
 
@@ -181,7 +182,8 @@ function startBetting() {
   if (state.bankroll + state.bet < RULES.minBet) {
     setStatus('You are out of chips. Start a new game to play again.', 'lose');
   } else if (!state.player.length) {
-    setStatus('Place your bet, then press Deal.');
+    const name = document.body.dataset.firstName;
+    setStatus(name ? `Welcome to the table, ${name}! Place your bet, then press Deal.` : 'Place your bet, then press Deal.');
   }
   saveBankroll(state.bankroll + state.bet);
 }
